@@ -46,3 +46,9 @@ To access the waiting rooms, you will need to input the saved tokes as well as a
 Under `lib/config.py` you find a number of global variables that define experiment settings as well as short descriptions of their effect on the experiment.
 
 Word/image pairs should be specified in a tab separated file: ```data/image_data.tsv```. The components of a pair are separated by a tab in the order: word tab link-to-image
+
+## Generating word-image pairs 
+
+### Using a subset of ImageNet
+
+[ImageNet](https://image-net.org/index.php) is a really large dataset for computer vision, freely available for research purposes. There isn't a direct possibility to directly download a subset of a more manageable size, except downloading a certain [Synset](https://en.wikipedia.org/wiki/Synonym_ring) as explained on the [website](https://image-net.org/download-images.php). You would need to be logged in and have already submitted a request(and have it approved) to see the full list of links and possibilities. 
