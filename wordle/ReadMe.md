@@ -52,3 +52,5 @@ Word/image pairs should be specified in a tab separated file: ```data/image_data
 ### Using a subset of ImageNet
 
 [ImageNet](https://image-net.org/index.php) is a really large dataset for computer vision, freely available for research purposes. There isn't a direct possibility to directly download a subset of a more manageable size, except downloading a certain [Synset](https://en.wikipedia.org/wiki/Synonym_ring) as explained on the [website](https://image-net.org/download-images.php). You would need to be logged in and have already submitted a request(and have it approved) to see the full list of links and possibilities. 
+
+Some subsets that could be an example: [here](https://github.com/fastai/imagenette) and [here](https://www.kaggle.com/datasets/akash2sharma/tiny-imagenet). You could place the subsets in a ```wordle/data/image_datasets``` folder. The [words.txt](wordle/scripts/pairs/words.txt) file contains the names of all the available Sysnets at the time of the creation of this repository, and most likely the subsets you will download will be contained in it. 
