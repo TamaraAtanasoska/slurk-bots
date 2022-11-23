@@ -8,3 +8,4 @@ ccbts/90_cocobots_blockworld
 
 #Wordle
 wordle/data/image_datasets/*
+*.swp
