@@ -4,3 +4,4 @@ python-socketio[client]
 Requests
 scipy
 wordhoard
+requests
