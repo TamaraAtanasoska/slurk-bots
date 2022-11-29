@@ -11,6 +11,17 @@ from collections import defaultdict
 from wordhoard import Synonyms, Hypernyms
 
 
+def _build_syn_hyp_list(words: list, weight: float):
+    word_list = []
+    if "spelled correctly" in words[0]:
+        word_list = []
+    else:
+        if isinstance(words, list):
+            for word in words:
+                word_list.append({word: weight})
+    return word_list
+
+
 def get_syn_hyper(word: str):
     """
         A function to all the wordhoard related APIs and retrieve a given word's
@@ -22,12 +33,9 @@ def get_syn_hyper(word: str):
     synonyms = synonym.find_synonyms()
     hypernyms = hypernym.find_hypernyms()
 
-    if any("No synonyms" in s for s in synonyms):
-        synonyms = []
-    if any("No hypernyms" in s for s in hypernyms):
-        hypernyms = []
-
-    return synonyms, hypernyms
+    syn_list = _build_syn_hyp_list(synonyms, 0.8)
+    hyper_list = _build_syn_hyp_list(hypernyms, 0.6)
+    return syn_list, hyper_list
 
 
 def get_related_terms(word: str):
@@ -38,7 +46,12 @@ def get_related_terms(word: str):
     obj = requests.get(
         "https://api.conceptnet.io/related/c/en/" + word + "?filter=/c/en"
     ).json()
-    return obj["related"]
+    terms = []
+    for term in obj["related"]:
+        terms.append(
+            {term.get("@id").split("/")[-1].replace("_", " "): term.get("weight")}
+        )
+    return terms
 
 
 def generate_file(sysnets_words: list):
@@ -53,21 +66,14 @@ def generate_file(sysnets_words: list):
     for num_word, word in enumerate(sysnets_words):
         related_terms = get_related_terms(word[1])
         synonyms, hypernyms = get_syn_hyper(word[1])
-        term_list.append(
-            [
-                word[0],
-                word[1],
-                synonyms,
-                hypernyms,
-                related_terms,
-            ]
-        )
+
+        with open("generated_terms.tsv", "a") as terms:
+            terms.write(str([word[0], word[1], synonyms, hypernyms, related_terms]))
+
         time.sleep(3)
         print("Processed word number ", num_word + 1, " : ", word[1])
-        print(term_list[-1])
     print("All the words finished processing!")
-    print("File is available at: ")
-    return term_list
+    print("File available in the current directory as 'generated_terms.tsv'.")
 
 
 def sysnet_to_word(path: pathlib.Path):
