@@ -4,6 +4,7 @@ import requests
 import pathlib
 import os
 import time
+import re
 
 from collections import defaultdict
 
@@ -37,7 +38,7 @@ def get_related_terms(word: str):
     obj = requests.get(
         "https://api.conceptnet.io/related/c/en/" + word + "?filter=/c/en"
     ).json()
-    return obj['related']
+    return obj["related"]
 
 
 def generate_file(sysnets_words: list):
@@ -63,6 +64,7 @@ def generate_file(sysnets_words: list):
         )
         time.sleep(3)
         print("Processed word number ", num_word + 1, " : ", word[1])
+        print(term_list[-1])
     print("All the words finished processing!")
     print("File is available at: ")
     return term_list
@@ -80,12 +82,14 @@ def sysnet_to_word(path: pathlib.Path):
     sysnets = [name for name in os.listdir(".") if os.path.isdir(name)]
 
     os.chdir(cur_dir)
-    lines = [x.split() for x in open("words.txt").readlines()]
+    lines = [
+        re.split(r"[ ]*[,\t\n][ ]*", x.strip()) for x in open("words.txt").readlines()
+    ]
     sysnets_words = []
     for line in lines:
         for sysnet in sysnets:
             if sysnet == line[0]:
-                sysnets_words.append([line[0], line[1].rstrip(",")])
+                sysnets_words.append([line[0], line[1]])
     return sysnets_words
 
 
