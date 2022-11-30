@@ -13,10 +13,10 @@ from wordhoard import Synonyms, Hypernyms
 
 def _build_syn_hyp_list(words: list, weight: float):
     word_list = []
-    if "spelled correctly" in words[0]:
-        word_list = []
-    else:
-        if isinstance(words, list):
+    if isinstance(words, list):
+        if "spelled correctly" in words[0]:
+            word_list = []
+        else:
             for word in words:
                 word_list.append({word: weight})
     return word_list
