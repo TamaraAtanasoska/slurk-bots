@@ -73,7 +73,7 @@ def generate_file(sysnets_words: list):
 
         term_list.append([
             {"Sysnet": word[0]},
-            {"Word": word[1]},
+            {"Word": {word[1]: 1}},
             {"Synonyms": synonyms},
             {"Hypernyms": hypernyms},
             {"ConceptNet related terms": related_terms},
@@ -118,7 +118,14 @@ def sysnet_to_word(path: pathlib.Path):
 
 def _preprocess_terms(terms: list):
     for term in terms:
-        print(term)
+        trimmed = []
+        for d in term[1:]:
+            for key, val in d.items():
+                for k, v in val.items():
+                    if len(k) == 5: 
+                        trimmed.append({k: v})
+            
+        trimmed = dict(ChainMap(*trimmed))
 
 
 def create_pairs(args: argparse.Namespace):
