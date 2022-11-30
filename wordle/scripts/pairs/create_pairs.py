@@ -7,6 +7,8 @@ import time
 import re
 import uuid
 
+from collections import ChainMap
+
 from wordhoard import Synonyms, Hypernyms
 
 
@@ -18,7 +20,7 @@ def _build_syn_hyp_list(words: list, weight: float):
         else:
             for word in words:
                 word_list.append({word: weight})
-    return word_list
+    return dict(ChainMap(*word_list))
 
 
 def get_syn_hyper(word: str):
@@ -50,7 +52,7 @@ def get_related_terms(word: str):
         terms.append(
             {term.get("@id").split("/")[-1].replace("_", " "): term.get("weight")}
         )
-    return terms
+    return dict(ChainMap(*terms))
 
 
 def generate_file(sysnets_words: list):
@@ -61,7 +63,7 @@ def generate_file(sysnets_words: list):
     is necessary, additionally because of a bug in the library."
     """
     term_list = []
-    filename = str(uuid.uuid4()) + ".tsv"
+    filename = str(uuid.uuid4()) + ".json"
     file_path = os.getcwd() + "/" + filename
 
     print("Number of words to process: ", len(sysnets_words))
@@ -69,10 +71,22 @@ def generate_file(sysnets_words: list):
         related_terms = get_related_terms(word[1])
         synonyms, hypernyms = get_syn_hyper(word[1])
 
-        with open(filename, "a") as terms:
-            terms.write(str([word[0], word[1], synonyms, hypernyms, related_terms]))
+        term_list.append([
+            {"Sysnet": word[0]},
+            {"Word": word[1]},
+            {"Synonyms": synonyms},
+            {"Hypernyms": hypernyms},
+            {"ConceptNet related terms": related_terms},
+        ])
 
         time.sleep(3)
+    with open(filename, "w", encoding="utf-8") as terms_file:
+        json.dump(
+            term_list,
+            terms_file,
+            ensure_ascii=False,
+            indent=4,
+        )
         print("Processed word number ", num_word + 1, " : ", word[1])
     print("All the words finished processing!")
     print("Path to file: ", file_path)
@@ -102,6 +116,11 @@ def sysnet_to_word(path: pathlib.Path):
     return sysnets_words
 
 
+def _preprocess_terms(terms: list):
+    for term in terms:
+        print(term)
+
+
 def create_pairs(args: argparse.Namespace):
     """
         The main function to create the pairs. Retrieves the sysnets, words and all
@@ -110,11 +129,14 @@ def create_pairs(args: argparse.Namespace):
     pair creation, a generated terms file needs to be passed.
     """
     terms_file = ""
-    if not args.terms_path: 
+    if not args.terms_path:
         sysnets_words = sysnet_to_word(args.image_path)
-        terms_file = generate_file(sysnet_words)
+        terms_file = generate_file(sysnets_words)
     else:
         terms_file = args.terms_path
+
+    with open(terms_file, "r") as terms:
+        _preprocess_terms(json.loads(terms.read()))
 
 
 if __name__ == "__main__":
