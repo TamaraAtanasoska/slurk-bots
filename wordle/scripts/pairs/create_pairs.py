@@ -5,8 +5,7 @@ import pathlib
 import os
 import time
 import re
-
-from collections import defaultdict
+import uuid
 
 from wordhoard import Synonyms, Hypernyms
 
@@ -62,18 +61,22 @@ def generate_file(sysnets_words: list):
     is necessary, additionally because of a bug in the library."
     """
     term_list = []
+    filename = str(uuid.uuid4()) + ".tsv"
+    file_path = os.getcwd() + "/" + filename
+
     print("Number of words to process: ", len(sysnets_words))
-    for num_word, word in enumerate(sysnets_words):
+    for num_word, word in enumerate(sysnets_words[:2]):
         related_terms = get_related_terms(word[1])
         synonyms, hypernyms = get_syn_hyper(word[1])
 
-        with open("generated_terms.tsv", "a") as terms:
+        with open(filename, "a") as terms:
             terms.write(str([word[0], word[1], synonyms, hypernyms, related_terms]))
 
         time.sleep(3)
         print("Processed word number ", num_word + 1, " : ", word[1])
     print("All the words finished processing!")
-    print("File available in the current directory as 'generated_terms.tsv'.")
+    print("Path to file: ", file_path)
+    return file_path
 
 
 def sysnet_to_word(path: pathlib.Path):
@@ -103,19 +106,30 @@ def create_pairs(args: argparse.Namespace):
     """
         The main function to create the pairs. Retrieves the sysnets, words and all
     required related terms, then makes custom defined pairs according to the
-    parameters passed to the script.
+    parameters passed to the script. To skip the generation and go direclty to
+    pair creation, a generated terms file needs to be passed.
     """
-    sysnets_words = sysnet_to_word(args.path)
-    generate_file(sysnets_words)
+    terms_file = ""
+    if not args.terms_path: 
+        sysnets_words = sysnet_to_word(args.image_path)
+        terms_file = generate_file(sysnet_words)
+    else:
+        terms_file = args.terms_path
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--path",
+        "--image_path",
         type=pathlib.Path,
         help="Path to images",
         required=True,
+    )
+    parser.add_argument(
+        "--terms_path",
+        type=pathlib.Path,
+        help="Path to generated terms file",
+        required=False,
     )
     parser.add_argument(
         "--difficulty",
