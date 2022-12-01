@@ -15,6 +15,11 @@ from wordhoard import Synonyms, Hypernyms
 
 
 def _build_syn_hyp_list(words: list, weight: float):
+    """
+    This function gives shape to the retrieved synonyms and hypernyms. It takes a
+    given list of words and a set weight for all words of type and makes word:weight
+    pairs. Additionally, there is profanity check.
+    """
     word_list = []
     if isinstance(words, list):
         if "spelled correctly" in words[0]:
@@ -29,7 +34,7 @@ def _build_syn_hyp_list(words: list, weight: float):
 def get_syn_hyper(word: str):
     """
         A function to all the wordhoard related APIs and retrieve a given word's
-    synonyms and hypernyms"
+    synonyms and hypernyms.
     """
     synonym = Synonyms(search_string=word)
     hypernym = Hypernyms(search_string=word)
@@ -122,6 +127,11 @@ def sysnet_to_word(path: pathlib.Path):
 
 
 def _preprocess_terms(terms: list):
+    """
+    This function reduceds all the related words to just the possible pairs with 5
+    letters. Additionally whenever there are multiple weight estimations for a word,
+    it averages the weight between the two.
+    """
     all_terms = []
     for term in terms:
         trimmed = []
@@ -139,6 +149,10 @@ def _preprocess_terms(terms: list):
 
 
 def _reduce_by_difficulty(pairs: list):
+    """
+    This function applies a difficulty filter. An association between words is
+    considedred easier the closer it is to 1.
+    """
     diff_terms = []
     for sys in pairs:
         trimmed = []
@@ -151,6 +165,9 @@ def _reduce_by_difficulty(pairs: list):
 
 
 def _reduce_per_sysnet(pairs: list):
+    """
+    This function applies a filter reducing the number of pairs for each Sysnet.
+    """
     reduced_terms = []
     for sys in temp_pairs:
         reduced_terms.append(
@@ -160,6 +177,10 @@ def _reduce_per_sysnet(pairs: list):
 
 
 def _create_final_pairs_file(pairs: list, images_path: pathlib.Path):
+    """
+    This function writes to a .tsv file with the final version of the pairs to be
+    used in the game.
+    """
     cur_dir = os.getcwd()
 
     os.chdir(images_path)
