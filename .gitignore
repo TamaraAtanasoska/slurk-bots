@@ -10,4 +10,4 @@ ccbts/90_cocobots_blockworld
 wordle/data/image_datasets/*
 *.swp
 wordle/scripts/pairs/wordhoard_error.yaml
-wordle/scripts/pairs/generated_terms*
+wordle/scripts/pairs/terms*
