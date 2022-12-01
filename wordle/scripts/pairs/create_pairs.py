@@ -4,6 +4,7 @@ import requests
 import pathlib
 import os
 import time
+import random
 import re
 import uuid
 
@@ -67,19 +68,22 @@ def generate_file(sysnets_words: list):
     file_path = os.getcwd() + "/" + filename
 
     print("Number of words to process: ", len(sysnets_words))
-    for num_word, word in enumerate(sysnets_words[:2]):
+    for num_word, word in enumerate(sysnets_words[:20]):
         related_terms = get_related_terms(word[1])
         synonyms, hypernyms = get_syn_hyper(word[1])
 
-        term_list.append([
-            {"Sysnet": word[0]},
-            {"Word": {word[1]: 1}},
-            {"Synonyms": synonyms},
-            {"Hypernyms": hypernyms},
-            {"ConceptNet related terms": related_terms},
-        ])
+        term_list.append(
+            [
+                {"Sysnet": word[0]},
+                {"Word": {word[1]: 1}},
+                {"Synonyms": synonyms},
+                {"Hypernyms": hypernyms},
+                {"ConceptNet related terms": related_terms},
+            ]
+        )
 
         time.sleep(3)
+        print("Processed word number ", num_word + 1, " : ", word[1])
     with open(filename, "w", encoding="utf-8") as terms_file:
         json.dump(
             term_list,
@@ -87,7 +91,6 @@ def generate_file(sysnets_words: list):
             ensure_ascii=False,
             indent=4,
         )
-        print("Processed word number ", num_word + 1, " : ", word[1])
     print("All the words finished processing!")
     print("Path to file: ", file_path)
     return file_path
@@ -96,7 +99,7 @@ def generate_file(sysnets_words: list):
 def sysnet_to_word(path: pathlib.Path):
     """
         This function generates a list of available sysnets in the image directory
-    and their idenfifying words. It takes the path to the image directory and the
+    and their idenfifying words. It takes the path ts the image directory and the
     file that lists all available ImageNet words, then creates a joint list.
     """
     cur_dir = os.getcwd()
@@ -117,15 +120,20 @@ def sysnet_to_word(path: pathlib.Path):
 
 
 def _preprocess_terms(terms: list):
+    all_terms = []
     for term in terms:
         trimmed = []
-        for d in term[1:]:
-            for key, val in d.items():
+        for term_types in term[1:]:
+            for key, val in term_types.items():
                 for k, v in val.items():
-                    if len(k) == 5: 
+                    if len(k) == 5:
+                        for d in trimmed:
+                            if k in d:
+                                v = round(((v + d.get(k)) / 2), 3)
+                                trimmed.remove(d)
                         trimmed.append({k: v})
-            
-        trimmed = dict(ChainMap(*trimmed))
+        all_terms.append([*term[0].values(), dict(ChainMap(*trimmed))])
+    return all_terms
 
 
 def create_pairs(args: argparse.Namespace):
@@ -143,7 +151,32 @@ def create_pairs(args: argparse.Namespace):
         terms_file = args.terms_path
 
     with open(terms_file, "r") as terms:
-        _preprocess_terms(json.loads(terms.read()))
+        possible_pairs = _preprocess_terms(json.loads(terms.read()))
+
+    temp_pars = []
+    if args.difficulty:
+        diff_terms = []
+        for sys in possible_pairs:
+            trimmed = []
+            for k, v in sys[1].items():
+                if sys[1].get(k) >= args.difficulty:
+                    trimmed.append({k: v})
+            if trimmed:
+                diff_terms.append([sys[0], dict(ChainMap(*trimmed))])
+        temp_pairs = diff_terms
+    else:
+        temp_pairs = possible_pairs
+
+    if args.per_sysnet:
+        reduced_terms = []
+        for sys in temp_pairs:
+            reduced_terms.append(
+                [sys[0], {k: sys[1][k] for k in list(sys[1])[: args.per_sysnet]}]
+            )
+        temp_pairs = reduced_terms
+
+    if args.num_sysnets:
+        temp_pairs = [random.choice(temp_pairs) for _ in range(args.num_sysnets)]
 
 
 if __name__ == "__main__":
@@ -167,7 +200,7 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
-        "--num_pairs",
+        "--num_sysnets",
         type=int,
         help="Number of pairs",
         required=False,
