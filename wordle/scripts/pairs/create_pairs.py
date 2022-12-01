@@ -64,7 +64,7 @@ def generate_file(sysnets_words: list):
     is necessary, additionally because of a bug in the library."
     """
     term_list = []
-    filename = str(uuid.uuid4()) + ".json"
+    filename = str("terms_" + str(uuid.uuid4())) + ".json"
     file_path = os.getcwd() + "/" + filename
 
     print("Number of words to process: ", len(sysnets_words))
@@ -92,7 +92,7 @@ def generate_file(sysnets_words: list):
             indent=4,
         )
     print("All the words finished processing!")
-    print("Path to file: ", file_path)
+    print("Path to full terms file: ", file_path)
     return file_path
 
 
@@ -136,6 +136,43 @@ def _preprocess_terms(terms: list):
     return all_terms
 
 
+def _reduce_by_difficulty(pairs: list):
+    diff_terms = []
+    for sys in pairs:
+        trimmed = []
+        for k, v in sys[1].items():
+            if sys[1].get(k) >= args.difficulty:
+                trimmed.append({k: v})
+        if trimmed:
+            diff_terms.append([sys[0], dict(ChainMap(*trimmed))])
+    return diff_terms
+
+
+def _reduce_per_sysnet(pairs: list):
+    reduced_terms = []
+    for sys in temp_pairs:
+        reduced_terms.append(
+            [sys[0], {k: sys[1][k] for k in list(sys[1])[: args.per_sysnet]}]
+        )
+    return reduced_terms
+
+
+def _create_final_pairs_file(pairs: list, images_path: pathlib.Path):
+    cur_dir = os.getcwd()
+
+    os.chdir(images_path)
+    final_pairs = []
+    for pair in pairs: 
+        for term in pair[1].items():
+            image_path = os.getcwd() + "/" + pair[0] + "/" + str(random.choice(os.listdir(pair[0])))
+            final_pairs.append(term[0] + "\t" + image_path + "\n")
+
+    os.chdir(cur_dir)
+    with open("image_data.tsv", "w", encoding="utf-8") as f:
+         for p in final_pairs:
+             f.write(p)
+    print("Path to final pairs file: ", os.getcwd() + "/" + "image_data.tsv")
+
 def create_pairs(args: argparse.Namespace):
     """
         The main function to create the pairs. Retrieves the sysnets, words and all
@@ -155,28 +192,17 @@ def create_pairs(args: argparse.Namespace):
 
     temp_pars = []
     if args.difficulty:
-        diff_terms = []
-        for sys in possible_pairs:
-            trimmed = []
-            for k, v in sys[1].items():
-                if sys[1].get(k) >= args.difficulty:
-                    trimmed.append({k: v})
-            if trimmed:
-                diff_terms.append([sys[0], dict(ChainMap(*trimmed))])
-        temp_pairs = diff_terms
+        temp_pairs = _reduce_by_difficulty(possible_pairs)
     else:
         temp_pairs = possible_pairs
 
     if args.per_sysnet:
-        reduced_terms = []
-        for sys in temp_pairs:
-            reduced_terms.append(
-                [sys[0], {k: sys[1][k] for k in list(sys[1])[: args.per_sysnet]}]
-            )
-        temp_pairs = reduced_terms
+        temp_pairs = _reduce_by_difficulty(temp_pairs)
 
     if args.num_sysnets:
         temp_pairs = [random.choice(temp_pairs) for _ in range(args.num_sysnets)]
+
+    _create_final_pairs_file(temp_pairs, args.image_path) 
 
 
 if __name__ == "__main__":
