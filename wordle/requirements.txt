@@ -5,3 +5,5 @@ Requests
 scipy
 wordhoard
 requests
+alt-profanity-check
+

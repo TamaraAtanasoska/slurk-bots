@@ -10,6 +10,7 @@ import uuid
 
 from collections import ChainMap
 
+from profanity_check import predict_prob
 from wordhoard import Synonyms, Hypernyms
 
 
@@ -20,7 +21,8 @@ def _build_syn_hyp_list(words: list, weight: float):
             word_list = []
         else:
             for word in words:
-                word_list.append({word: weight})
+                if predict_prob([word]) < 0.5:
+                    word_list.append({word: weight})
     return dict(ChainMap(*word_list))
 
 
@@ -50,9 +52,9 @@ def get_related_terms(word: str):
     ).json()
     terms = []
     for term in obj["related"]:
-        terms.append(
-            {term.get("@id").split("/")[-1].replace("_", " "): term.get("weight")}
-        )
+        word = term.get("@id").split("/")[-1].replace("_", " ")
+        if predict_prob([word]) < 0.5:
+            terms.append({word: term.get("weight")})
     return dict(ChainMap(*terms))
 
 
@@ -68,7 +70,7 @@ def generate_file(sysnets_words: list):
     file_path = os.getcwd() + "/" + filename
 
     print("Number of words to process: ", len(sysnets_words))
-    for num_word, word in enumerate(sysnets_words[:20]):
+    for num_word, word in enumerate(sysnets_words[:10]):
         related_terms = get_related_terms(word[1])
         synonyms, hypernyms = get_syn_hyper(word[1])
 
@@ -162,16 +164,23 @@ def _create_final_pairs_file(pairs: list, images_path: pathlib.Path):
 
     os.chdir(images_path)
     final_pairs = []
-    for pair in pairs: 
+    for pair in pairs:
         for term in pair[1].items():
-            image_path = os.getcwd() + "/" + pair[0] + "/" + str(random.choice(os.listdir(pair[0])))
+            image_path = (
+                os.getcwd()
+                + "/"
+                + pair[0]
+                + "/"
+                + str(random.choice(os.listdir(pair[0])))
+            )
             final_pairs.append(term[0] + "\t" + image_path + "\n")
 
     os.chdir(cur_dir)
     with open("image_data.tsv", "w", encoding="utf-8") as f:
-         for p in final_pairs:
-             f.write(p)
+        for p in final_pairs:
+            f.write(p)
     print("Path to final pairs file: ", os.getcwd() + "/" + "image_data.tsv")
+
 
 def create_pairs(args: argparse.Namespace):
     """
@@ -202,7 +211,7 @@ def create_pairs(args: argparse.Namespace):
     if args.num_sysnets:
         temp_pairs = [random.choice(temp_pairs) for _ in range(args.num_sysnets)]
 
-    _create_final_pairs_file(temp_pairs, args.image_path) 
+    _create_final_pairs_file(temp_pairs, args.image_path)
 
 
 if __name__ == "__main__":
