@@ -75,7 +75,7 @@ def generate_file(sysnets_words: list):
     file_path = os.getcwd() + "/" + filename
 
     print("Number of words to process: ", len(sysnets_words))
-    for num_word, word in enumerate(sysnets_words[:10]):
+    for num_word, word in enumerate(sysnets_words):
         related_terms = get_related_terms(word[1])
         synonyms, hypernyms = get_syn_hyper(word[1])
 
