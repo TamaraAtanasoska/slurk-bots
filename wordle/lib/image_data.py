@@ -4,6 +4,9 @@
 import random
 
 
+from lib.config import DATA_PATH
+
+
 class ImageData(dict):
     """Manage the access to image data.
 
@@ -34,12 +37,16 @@ class ImageData(dict):
                  game_mode='same',
                  shuffle=False,
                  seed=None):
-        self._path = path
+        self._path_difficult = path + "pairs-difficult.tsv"
+        self._path_ideal = path + "pairs-ideal.tsv"
+        self._path_easy = path + "pairs-easy.tsv"
         self._n = n
         self._mode = game_mode
         self._shuffle = shuffle
 
-        self._images = None
+        self._images_difficult = None
+        self._images_ideal = None
+        self._images_easy = None
         if seed is not None:
             random.seed(seed)
 
@@ -71,28 +78,39 @@ class ImageData(dict):
         Returns:
             None
         """
-        if self._images is None:
+        if self._images_difficult or self._images_ideal or self._images_easy is None:
             # first time accessing the file
             # or a new access for each random sample
-            self._images = self._image_gen()
+            self._images_difficult = self._image_gen(self._path_difficult)
+            self._images_ideal = self._image_gen(self._path_ideal)
+            self._images_easy = self._image_gen(self._path_easy)
 
         sample = []
         while len(sample) < self._n:
             try:
-                pair = next(self._images)
+                if len(sample)==0:
+                    pair = random.choice(list(self._images_easy))
+                if len(sample)==1:
+                    pair = random.choice(list(self._images_ideal))
+                if len(sample)==2:
+                    pair = random.choice(list(self._images_difficult))
             except StopIteration:
                 # we reached the end of the file
                 # and start again from the top
-                self._images = self._image_gen()
+                self._images_difficult = self._image_gen(self._path_difficult)
+                self._images_ideal = self._image_gen(self._path_ideal)
+                self._images_easy = self._image_gen(self._path_easy)
             else:
                 sample.append(pair)
-        if self._shuffle:
-            # implements reservoir sampling
-            for img_line, img in enumerate(self._images, self._n):
-                rand_line = random.randint(0, img_line)
-                if rand_line < self._n:
-                    sample[rand_line] = tuple(img)
-            self._images = None
+
+        print(sample)
+        #if self._shuffle:
+        #    # implements reservoir sampling
+        #    for img_line, img in enumerate(self._images, self._n):
+        #        rand_line = random.randint(0, img_line)
+        #        if rand_line < self._n:
+        #            sample[rand_line] = tuple(img)
+        #    self._images = None
 
         # make sure that for the one_blind mode, the game alternates
         # between who sees the image
@@ -109,9 +127,9 @@ class ImageData(dict):
         else:
             self[room_id] = sample
 
-    def _image_gen(self):
+    def _image_gen(self, path):
         """Generate one image pair at a time."""
-        with open(self._path, "r") as infile:
+        with open(path, "r") as infile:
             for line in infile:
                 data = line.strip().split("\t")
                 if len(data) == 2:
@@ -145,14 +163,9 @@ if __name__ == "__main__":
     import sys
     import unittest
 
-    im = ImageData(path="data/image_data.tsv", n=15, shuffle=True)
+    im = ImageData(path=DATA_PATH, n=15, shuffle=False)
+  
+    im.get_word_image_pairs(22)
+ 
+    
 
-    ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.append(ROOT)
-
-    from tests.test_image_data import TestImageData
-
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestImageData))
-    runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(suite)
