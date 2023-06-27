@@ -168,4 +168,12 @@ if __name__ == "__main__":
     im.get_word_image_pairs(22)
  
     
+    ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.append(ROOT)
 
+    from tests.test_image_data import TestImageData
+
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestImageData))
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(suite)
