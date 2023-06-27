@@ -1,9 +1,11 @@
+import argparse
+import pathlib
 import pandas as pd
 
 
-def main():
+def main(args):
     # import the pairs file
-    df1 = pd.read_csv("../data/image_data.tsv", sep="\t", header=None)
+    df1 = pd.read_csv(args.path, sep="\t", header=None)
     df1.columns = ["term", "image_path"]
 
     # import the existing wordslist
@@ -26,4 +28,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--path",
+        type=pathlib.Path,
+        help="Path to file",
+        required=True,
+    )
+    args = parser.parse_args()
+    main(args)
